@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordenação &amp; Seletividade — Transformador 300 kVA 13,8 kV / 440 V</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg-0:#070b14;
+  --bg-1:#0c1220;
+  --bg-2:#121a2c;
+  --panel:#141d33;
+  --panel-2:#182238;
+  --border:#243050;
+  --border-soft:#1c2740;
+  --text:#e7ecf7;
+  --text-dim:#8a93ad;
+  --text-faint:#5c6685;
+  --cyan:#3ddcff;
+  --cyan-dim:#1d5c72;
+  --amber:#ffb02e;
+  --amber-dim:#7a5a1a;
+  --red:#ff4d6a;
+  --red-dim:#7a1f2e;
+  --green:#39e08a;
+  --violet:#a48bff;
+  --grid-line:#1a2440;
+  --grid-major:#25335a;
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg-0);color:var(--text);font-family:'Inter',ui-sans-serif,system-ui,sans-serif;overflow-x:hidden;}
+body{
+  background:
+    radial-gradient(1200px 700px at 15% -10%, #0e2a3a30, transparent 60%),
+    radial-gradient(1000px 600px at 100% 0%, #1a1440 30%, transparent 60%),
+    var(--bg-0);
+  min-height:100vh;
+}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+::selection{background:var(--cyan);color:#00131a;}
+
+/* ---------- BOOT SEQUENCE ---------- */
+#boot{
+  position:fixed;inset:0;z-index:999;background:var(--bg-0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#boot.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.boot-mark{
+  width:64px;height:64px;border-radius:50%;
+  border:1.5px solid var(--cyan-dim);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono';font-weight:700;color:var(--cyan);
+  box-shadow:0 0 30px #3ddcff33, inset 0 0 20px #3ddcff11;
+  margin-bottom:28px;animation:pulseRing 2.2s ease-in-out infinite;
+}
+@keyframes pulseRing{0%,100%{box-shadow:0 0 20px #3ddcff22, inset 0 0 14px #3ddcff11;}50%{box-shadow:0 0 42px #3ddcff55, inset 0 0 24px #3ddcff22;}}
+.boot-line{
+  font-family:'JetBrains Mono';font-size:13px;letter-spacing:.12em;color:var(--text-dim);
+  margin:4px 0;opacity:0;transform:translateY(6px);animation:bootIn .5s forwards;
+  text-transform:uppercase;
+}
+.boot-line.active{color:var(--cyan);}
+.boot-line.done::before{content:'✓ ';color:var(--green);}
+@keyframes bootIn{to{opacity:1;transform:translateY(0);}}
+.boot-bar{width:280px;height:2px;background:var(--border-soft);margin-top:22px;border-radius:2px;overflow:hidden;}
+.boot-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));transition:width .35s ease;}
+#boot-skip{
+  position:absolute;bottom:26px;right:30px;background:none;border:1px solid var(--border);
+  color:var(--text-faint);font-family:'JetBrains Mono';font-size:11px;padding:8px 14px;border-radius:6px;
+  cursor:pointer;letter-spacing:.08em;
+}
+#boot-skip:hover{color:var(--text);border-color:var(--text-faint);}
+
+/* ---------- HEADER ---------- */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 26px;border-bottom:1px solid var(--border-soft);
+  background:linear-gradient(180deg,#0d1425,#0a0f1c);
+  position:sticky;top:0;z-index:50;
+}
+.brand{display:flex;align-items:center;gap:14px;}
+.avatar{
+  width:38px;height:38px;border-radius:50%;border:1.5px solid var(--cyan-dim);
+  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';
+  font-weight:700;font-size:13px;color:var(--cyan);box-shadow:0 0 16px #3ddcff22;flex:none;
+}
+.brand h1{font-size:15px;font-weight:700;margin:0;letter-spacing:.02em;}
+.brand p{font-size:11.5px;color:var(--text-dim);margin:2px 0 0;font-family:'JetBrains Mono';letter-spacing:.03em;}
+.header-actions{display:flex;gap:10px;align-items:center;}
+.status-pill{
+  display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:20px;
+  border:1px solid var(--border);background:var(--panel);font-family:'JetBrains Mono';font-size:11.5px;
+  letter-spacing:.05em;color:var(--text-dim);
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+.status-pill[data-state="fault"] .status-dot{background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1s infinite;}
+.status-pill[data-state="warn"] .status-dot{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+@keyframes blink{50%{opacity:.35;}}
+
+/* ---------- LAYOUT ---------- */
+#app{max-width:1560px;margin:0 auto;padding:20px 22px 60px;}
+.cards-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+.card{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:10px;padding:14px 16px;
+  position:relative;overflow:hidden;
+}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--cyan-dim);}
+.card .k{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.09em;font-family:'JetBrains Mono';}
+.card .v{font-family:'JetBrains Mono';font-size:20px;font-weight:700;margin-top:6px;color:var(--text);}
+.card .u{font-size:11px;color:var(--text-dim);margin-left:5px;font-weight:400;}
+.card .s{font-size:10.5px;color:var(--text-faint);margin-top:4px;}
+
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start;}
+.col-right{display:flex;flex-direction:column;gap:16px;}
+
+.panel{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;
+}
+.panel-head{
+  padding:13px 16px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel-2);
+}
+.panel-head h2{font-size:12px;margin:0;letter-spacing:.09em;text-transform:uppercase;color:var(--text-dim);font-family:'JetBrains Mono';font-weight:600;}
+.panel-body{padding:16px;}
+
+/* ---------- CHART PANEL ---------- */
+#chart-panel .panel-head{gap:10px;}
+.chart-toolbar{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{
+  font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:.03em;padding:8px 14px;border-radius:7px;
+  border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;transition:.15s;
+}
+.btn:hover{border-color:var(--cyan-dim);color:var(--cyan);background:#122234;}
+.btn.primary{background:linear-gradient(135deg,#1a5c73,#0e3a4a);border-color:var(--cyan-dim);color:#bdf3ff;}
+.btn.primary:hover{box-shadow:0 0 18px #3ddcff33;}
+.btn.danger{background:linear-gradient(135deg,#5c1a2a,#3a0e18);border-color:var(--red-dim);color:#ffc3ce;}
+.btn.danger:hover{box-shadow:0 0 18px #ff4d6a33;}
+.btn.ghost{background:transparent;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 16px;}
+
+#chart-wrap{position:relative;padding:10px 6px 4px;}
+svg#chart{width:100%;height:auto;display:block;}
+.axis-label{font-family:'JetBrains Mono';font-size:11px;fill:var(--text-faint);}
+.tick-label{font-family:'JetBrains Mono';font-size:9.5px;fill:var(--text-faint);}
+.curve-path{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px currentColor);}
+.vline{stroke-width:1.6;stroke-dasharray:5 4;}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:12px 16px 16px;border-top:1px solid var(--border-soft);}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-dim);cursor:pointer;user-select:none;font-family:'JetBrains Mono';}
+.legend-item.off{opacity:.32;}
+.legend-swatch{width:16px;height:3px;border-radius:2px;flex:none;}
+.legend-swatch.dash{background:repeating-linear-gradient(90deg,currentColor 0 5px, transparent 5px 9px);}
+
+/* ---------- CONTROLS ---------- */
+.ctrl{margin-bottom:16px;}
+.ctrl:last-child{margin-bottom:0;}
+.ctrl label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim);margin-bottom:8px;font-family:'JetBrains Mono';}
+.ctrl label b{color:var(--text);font-weight:600;}
+.ctrl label span.val{color:var(--cyan);font-weight:700;}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;border-radius:3px;background:var(--border);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--cyan);cursor:pointer;
+  box-shadow:0 0 10px #3ddcff88;border:2px solid #0c1220;
+}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--cyan);cursor:pointer;border:2px solid #0c1220;}
+.ctrl-note{font-size:10.5px;color:var(--text-faint);margin-top:6px;line-height:1.5;}
+
+/* ---------- STATUS / VALUES ---------- */
+.kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-soft);font-size:12px;}
+.kv:last-child{border-bottom:none;}
+.kv .k{color:var(--text-dim);font-family:'JetBrains Mono';font-size:11px;}
+.kv .v{font-family:'JetBrains Mono';font-weight:700;color:var(--text);}
+.big-status{
+  text-align:center;padding:16px 10px;border-radius:9px;margin-bottom:14px;
+  border:1px solid var(--border);background:var(--panel-2);font-family:'JetBrains Mono';
+  font-weight:700;font-size:14px;letter-spacing:.06em;color:var(--green);transition:.3s;
+}
+.big-status.warn{color:var(--amber);border-color:var(--amber-dim);box-shadow:0 0 20px #ffb02e18 inset;}
+.big-status.fault{color:var(--red);border-color:var(--red-dim);box-shadow:0 0 20px #ff4d6a18 inset;animation:statusPulse 1.4s infinite;}
+@keyframes statusPulse{0%,100%{box-shadow:0 0 14px #ff4d6a10 inset;}50%{box-shadow:0 0 28px #ff4d6a30 inset;}}
+
+/* ---------- EXPLANATION ---------- */
+#explain-body{font-size:12.8px;line-height:1.7;color:var(--text-dim);}
+#explain-title{font-family:'JetBrains Mono';font-weight:700;color:var(--cyan);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:block;}
+
+/* ---------- DIAGRAM ---------- */
+#diagram-panel svg{width:100%;height:auto;}
+.diagram-label{font-family:'JetBrains Mono';font-size:10.5px;fill:var(--text-dim);}
+.diagram-label.strong{fill:var(--text);font-weight:700;}
+.bus-line{stroke:var(--border-soft);stroke-width:3;}
+.bus-line.energized{stroke:var(--cyan-dim);}
+.energy-particle{fill:var(--cyan);filter:drop-shadow(0 0 4px #3ddcff);}
+.device-box{fill:var(--panel-2);stroke:var(--border);stroke-width:1.4;}
+.device-box.open{stroke:var(--red);}
+.device-box.closed{stroke:var(--green);}
+.fault-flash{fill:var(--red);opacity:0;}
+
+/* ---------- COMPARISON TABLE ---------- */
+#compare-panel table{width:100%;border-collapse:collapse;font-size:11.5px;}
+#compare-panel th,#compare-panel td{padding:9px 10px;border-bottom:1px solid var(--border-soft);text-align:left;}
+#compare-panel th{color:var(--text-faint);font-family:'JetBrains Mono';font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+#compare-panel td{color:var(--text-dim);}
+#compare-panel td.sol{color:var(--text);font-weight:600;}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono';font-weight:700;}
+.tag.low{background:#3a1420;color:var(--red);}
+.tag.mid{background:#3a2a10;color:var(--amber);}
+.tag.high{background:#0f3a2a;color:var(--green);}
+.solution-card{border:1px solid var(--border-soft);border-radius:9px;padding:14px;margin-bottom:10px;background:var(--panel-2);}
+.solution-card h4{margin:0 0 6px;font-size:12.5px;color:var(--text);}
+.solution-card p{margin:0;font-size:11.5px;color:var(--text-dim);line-height:1.6;}
+.solution-card .status-tag{float:right;}
+.relay-btn{margin-top:10px;}
+
+/* ---------- DISCLAIMER ---------- */
+.disclaimer{
+  margin-top:22px;padding:14px 18px;border:1px solid var(--amber-dim);border-radius:10px;
+  background:#1c1608;font-size:11.5px;line-height:1.65;color:#e0c98a;display:flex;gap:12px;
+}
+.disclaimer .ic{font-size:18px;flex:none;}
+
+footer{text-align:center;padding:26px;color:var(--text-faint);font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:.05em;}
+
+/* ---------- PRESENTATION MODE ---------- */
+body.presentation .cards-row,
+body.presentation .col-right,
+body.presentation footer,
+body.presentation .disclaimer,
+body.presentation #compare-panel,
+body.presentation .chart-toolbar,
+body.presentation .legend{display:none !important;}
+body.presentation .main-grid{grid-template-columns:1fr;}
+body.presentation #app{padding-top:10px;}
+body.presentation #chart-panel{border-color:var(--cyan-dim);}
+body.presentation svg#chart{height:74vh;}
+#present-bar{
+  display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:80;
+  background:#0c1220ee;border:1px solid var(--border);border-radius:30px;padding:10px 18px;gap:10px;
+  backdrop-filter:blur(6px);box-shadow:0 10px 40px #000a;
+}
+body.presentation #present-bar{display:flex;align-items:center;}
+#present-bar .btn{padding:9px 12px;border-radius:50%;width:38px;height:38px;justify-content:center;}
+#present-scene-label{font-family:'JetBrains Mono';font-size:11px;color:var(--text-dim);padding:0 10px;min-width:170px;text-align:center;}
+
+/* ---------- MODAL ---------- */
+#modal-backdrop{position:fixed;inset:0;background:#000a;z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+#modal-backdrop.show{display:flex;}
+#modal-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:640px;width:100%;max-height:86vh;overflow:auto;}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:1100px){
+  .cards-row{grid-template-columns:repeat(2,1fr);}
+  .main-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001s !important;transition-duration:.001s !important;}
+}
+</style>
+</head>
+<body>
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="boot-mark">IF</div>
+  <div id="boot-lines"></div>
+  <div class="boot-bar"><div class="boot-bar-fill" id="boot-fill"></div></div>
+  <button id="boot-skip">PULAR ▸</button>
+</div>
+
+<header>
+  <div class="brand">
+    <div class="avatar">IF</div>
+    <div>
+      <h1>Coordenação &amp; Seletividade de Proteção</h1>
+      <p>TRAFO 300 kVA · 13,8 kV / 440 V · ESTUDO INTERATIVO</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="status-pill" id="header-status" data-state="ok"><span class="status-dot"></span><span id="header-status-text">SISTEMA NORMAL</span></div>
+    <button class="btn ghost" id="btn-present-toggle">⛶ MODO APRESENTAÇÃO</button>
+  </div>
+</header>
+
+<div id="app">
+
+  <div class="cards-row" id="cards-row"></div>
+
+  <div class="main-grid">
+    <!-- CHART COLUMN -->
+    <div>
+      <div class="panel" id="chart-panel">
+        <div class="panel-head">
+          <h2>Gráfico de Coordenação — Tempo × Corrente</h2>
+          <div class="chart-toolbar">
+            <button class="btn ghost" id="btn-replay-anim">↻ Replay animação</button>
+          </div>
+        </div>
+        <div id="chart-wrap">
+          <svg id="chart" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="legend" id="legend"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-demo">▶ INICIAR DEMONSTRAÇÃO</button>
+          <button class="btn danger" id="btn-fault">⚡ SIMULAR FALTA FASE-TERRA</button>
+          <button class="btn ghost" id="btn-reset">⟲ Resetar cenário</button>
+          <button class="btn ghost" id="btn-compare-scroll">📊 Ver comparação de soluções</button>
+        </div>
+      </div>
+
+      <div class="panel" id="diagram-panel" style="margin-top:16px;">
+        <div class="panel-head"><h2>Diagrama Unifilar Animado</h2></div>
+        <div class="panel-body">
+          <svg id="diagram" viewBox="0 0 1000 260" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+
+      <div class="panel" id="compare-panel" style="margin-top:16px;">
+        <div class="panel-head"><h2>Comparação de Soluções — Falta de Alta Impedância</h2></div>
+        <div class="panel-body">
+          <div class="solution-card">
+            <span class="status-tag tag low" id="sol1-tag">NÃO SENSIBILIZADO</span>
+            <h4>Solução 1 — Proteção convencional (elo fusível + disjuntor)</h4>
+            <p>A corrente de falta, limitada pela resistência de falta, pode permanecer abaixo dos níveis de atuação dos dispositivos de sobrecorrente convencionais. Nenhuma ação é tomada.</p>
+          </div>
+          <div class="solution-card">
+            <span class="status-tag tag high">ALTA SENSIBILIDADE</span>
+            <h4>Solução 2 — Relé de proteção de terra (50N / 51N / 50G / 51G)</h4>
+            <p>Um relé digital com função de sobrecorrente de terra pode ser ajustado para correntes muito inferiores às dos dispositivos de fase, sensibilizando mesmo com faltas de alta impedância.</p>
+            <button class="btn primary relay-btn" id="btn-activate-relay">Ativar Relé de Terra</button>
+          </div>
+          <div class="solution-card">
+            <span class="status-tag tag mid">ALTERNATIVA CONCEITUAL</span>
+            <h4>Solução 3 — Solução intermediária</h4>
+            <p>Dispositivo de detecção de corrente residual (DR), monitoramento de isolamento ou relé eletrônico com ajuste de baixa corrente — alternativas de custo intermediário entre a proteção convencional e um relé dedicado.</p>
+          </div>
+          <table>
+            <thead><tr><th>Solução</th><th>Sensibilidade</th><th>Custo</th><th>Complexidade</th></tr></thead>
+            <tbody>
+              <tr><td class="sol">Fusível + disjuntor</td><td><span class="tag low">Baixa</span></td><td>Baixo</td><td>Baixa</td></tr>
+              <tr><td class="sol">Relé de terra</td><td><span class="tag high">Alta</span></td><td>Médio / Alto</td><td>Média</td></tr>
+              <tr><td class="sol">Sistema dedicado</td><td><span class="tag high">Muito alta</span></td><td>Maior</td><td>Alta</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <div class="ic">⚠</div>
+        <div>Este aplicativo é uma representação didática e interativa de um estudo de coordenação e seletividade. Os valores das curvas e dos dispositivos são parâmetros configuráveis para fins de ensino e devem ser validados com dados reais dos equipamentos, curvas dos fabricantes e critérios normativos aplicáveis antes de qualquer uso em engenharia real. Este simulador não substitui um estudo formal de proteção.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-right">
+      <div class="panel">
+        <div class="panel-head"><h2>Status do Sistema</h2></div>
+        <div class="panel-body">
+          <div class="big-status" id="big-status">NORMAL</div>
+          <div class="kv"><span class="k">TENSÃO SECUNDÁRIO</span><span class="v mono" id="v-tensao">440 V</span></div>
+          <div class="kv"><span class="k">CORRENTE</span><span class="v mono" id="v-corrente">393,7 A</span></div>
+          <div class="kv"><span class="k">RESISTÊNCIA DE FALTA</span><span class="v mono" id="v-rf">40,0 Ω</span></div>
+          <div class="kv"><span class="k">CORRENTE CALCULADA (If)</span><span class="v mono" id="v-if">6,35 A</span></div>
+          <div class="kv"><span class="k">TEMPO DE ATUAÇÃO</span><span class="v mono" id="v-tempo">—</span></div>
+          <div class="kv"><span class="k">DISPOSITIVO ATUANTE</span><span class="v mono" id="v-dispositivo">—</span></div>
+        </div>
+      </div>
+
+      <div class="panel" id="waveform-panel">
+        <div class="panel-head"><h2>Interrupção do Disjuntor — Zero de Corrente</h2></div>
+        <div class="panel-body">
+          <svg id="wave-svg" viewBox="0 0 460 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;"></svg>
+          <div class="ctrl-note">O disjuntor real interrompe a corrente próximo à passagem natural por zero — momento de menor energia de arco. A curva permanece azul em operação normal e fica vermelha ao ser comandada a abrir, congelando exatamente no cruzamento por zero seguinte.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Controles do Estudo</h2></div>
+        <div class="panel-body">
+          <div class="ctrl">
+            <label><b>Resistência de falta (Rf)</b><span class="val" id="lbl-rf">40 Ω</span></label>
+            <input type="range" id="sl-rf" min="1" max="100" value="40" step="1">
+            <div class="ctrl-note">Move a linha de falta fase-terra no gráfico: If = V<sub>fase</sub> / Rf</div>
+          </div>
+          <div class="ctrl">
+            <label><b>Corrente nominal do elo (tipo K)</b><span class="val" id="lbl-fuse">25 A</span></label>
+            <input type="range" id="sl-fuse" min="6" max="65" value="25" step="1">
+            <div class="ctrl-note">Refletida ao secundário para fins de coordenação no mesmo eixo.</div>
+          </div>
+          <div class="ctrl">
+            <label><b>Ajuste térmico do disjuntor</b><span class="val" id="lbl-thermal">1,00 × In</span></label>
+            <input type="range" id="sl-thermal" min="80" max="130" value="100" step="1">
+          </div>
+          <div class="ctrl">
+            <label><b>Ajuste instantâneo do disjuntor</b><span class="val" id="lbl-inst">8,0 × Iset</span></label>
+            <input type="range" id="sl-inst" min="4" max="12" value="8" step="0.5">
+          </div>
+          <div class="ctrl">
+            <label><b>Impedância do transformador (%Z)</b><span class="val" id="lbl-z">4,5 %</span></label>
+            <input type="range" id="sl-z" min="30" max="70" value="45" step="1">
+            <div class="ctrl-note">Define a corrente de curto-circuito estimada no secundário.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>O que está acontecendo?</h2></div>
+        <div class="panel-body" id="explain-panel">
+          <span id="explain-title">CONDIÇÃO NORMAL</span>
+          <div id="explain-body">O sistema opera em regime permanente. A corrente nominal do secundário circula pela carga, dentro da faixa de operação normal do elo fusível e do disjuntor. Nenhum dispositivo de proteção está próximo de atuar.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>PIE-REAM · ESTUDO DIDÁTICO DE COORDENAÇÃO E SELETIVIDADE · GERADO PARA FINS EDUCACIONAIS</footer>
+</div>
+
+<div id="present-bar">
+  <button class="btn ghost" id="pb-prev" title="Anterior">⏮</button>
+  <button class="btn primary" id="pb-play" title="Iniciar/Pausar">▶</button>
+  <button class="btn ghost" id="pb-next" title="Próxima">⏭</button>
+  <span id="present-scene-label">Cena 0 / 0</span>
+  <button class="btn ghost" id="pb-restart" title="Reiniciar">↻</button>
+  <button class="btn ghost" id="pb-exit" title="Sair">✕</button>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   1. DADOS ELÉTRICOS BASE
+========================================================= */
+const SYS = {
+  S_kVA: 300,
+  Vp: 13800,
+  Vs: 440,
+};
+SYS.Ip = SYS.S_kVA*1000 / (Math.sqrt(3)*SYS.Vp);      // corrente nominal primário
+SYS.Is = SYS.S_kVA*1000 / (Math.sqrt(3)*SYS.Vs);       // corrente nominal secundário
+SYS.turnsRatio = SYS.Vp / SYS.Vs;                       // refere corrente do primário ao secundário
+SYS.Vfase = SYS.Vs / Math.sqrt(3);                      // tensão fase-neutro secundário
+
+// estado ajustável
+const state = {
+  fuseRating: 25,      // A, elo K no primário
+  thermalMult: 1.00,   // multiplicador do ajuste térmico do disjuntor (x In secundário)
+  instMult: 8.0,        // multiplicador do ajuste instantâneo
+  pctZ: 4.5,            // impedância percentual do transformador
+  rf: 40,                // ohms, resistência de falta
+  scene: 'normal',       // normal | inrush | overload | short | ground
+  relayActive: false,
+};
+
+function fmt(n, d=1){ return n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+/* =========================================================
+   2. CHART: ESCALA LOG-LOG
+========================================================= */
+const CHART = {
+  xmin:1, xmax:20000,
+  ymin:0.01, ymax:1000,
+  ml:70, mr:26, mt:20, mb:46,
+  w:1000, h:620,
+};
+CHART.pw = CHART.w - CHART.ml - CHART.mr;
+CHART.ph = CHART.h - CHART.mt - CHART.mb;
+
+function xPix(I){
+  I = Math.max(CHART.xmin, Math.min(CHART.xmax, I));
+  const lo = Math.log10(CHART.xmin), hi = Math.log10(CHART.xmax);
+  return CHART.ml + (Math.log10(I)-lo)/(hi-lo)*CHART.pw;
+}
+function yPix(t){
+  t = Math.max(CHART.ymin, Math.min(CHART.ymax, t));
+  const lo = Math.log10(CHART.ymin), hi = Math.log10(CHART.ymax);
+  return CHART.mt + CHART.ph - (Math.log10(t)-lo)/(hi-lo)*CHART.ph;
+}
+
+const svgNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs){
+  const e = document.createElementNS(svgNS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+/* =========================================================
+   3. CURVAS — MODELOS PARAMÉTRICOS
+========================================================= */
+function fuseRefSecondary(){ return state.fuseRating * SYS.turnsRatio; }
+
+function fuseMinMeltCurve(){
+  const Ir = fuseRefSecondary();
+  const n = 2.75, A = 15*Math.pow(2,n);
+  const pts = [];
+  for(let m=1.35; m<=60; m*=1.18){
+    const I = Ir*m;
+    if(I>CHART.xmax) break;
+    let t = A/Math.pow(m,n);
+    t = Math.max(0.008, Math.min(300, t));
+    pts.push([I,t]);
+  }
+  return pts;
+}
+function fuseMaxClearCurve(){
+  return fuseMinMeltCurve().map(([I,t])=>[I, Math.min(300,t*1.32)]);
+}
+
+function breakerThermalCurve(){
+  const Iset = SYS.Is*state.thermalMult;
+  const Iinst = Iset*state.instMult;
+  const B = 60;
+  const pts=[];
+  for(let m=1.05; m*Iset<=Iinst; m*=1.06){
+    const I = Iset*m;
+    let t = B/((m*m)-1);
+    t = Math.max(0.02, Math.min(400, t));
+    pts.push([I,t]);
+  }
+  return pts;
+}
+function breakerInstCurve(){
+  const Iset = SYS.Is*state.thermalMult;
+  const Iinst = Iset*state.instMult;
+  return [[Iinst,0.032],[CHART.xmax,0.028]];
+}
+
+function inrushCurve(){
+  const In = SYS.Is;
+  return [[In*9,0.09],[In*5.5,0.4],[In*3,1.6],[In*1.8,5]];
+}
+function startupWithstandCurve(){
+  const In = SYS.Is;
+  return [[In*24,2],[In*12,8],[In*6,40],[In*3,220]];
+}
+
+function shortCircuitCurrent(){
+  return SYS.Is / (state.pctZ/100);
+}
+function groundFaultCurrent(){
+  return SYS.Vfase / state.rf;
+}
+
+/* =========================================================
+   4. DEFINIÇÃO DAS CURVAS/LINHAS (para desenho + legenda)
+========================================================= */
+const CURVE_DEFS = [
+  {id:'load',   label:'Corrente nominal da carga',        color:'#7fd8ff', type:'vline', get:()=>SYS.Is, dash:false},
+  {id:'inrush', label:'Energização — Inrush',               color:'#ffd166', type:'curve', get:inrushCurve, dash:true},
+  {id:'startup',label:'Curva de partida do transformador', color:'#ff9f5a', type:'curve', get:startupWithstandCurve, dash:true},
+  {id:'brkth',  label:'Disjuntor — curva térmica',          color:'#39e08a', type:'curve', get:breakerThermalCurve, dash:false},
+  {id:'brkinst',label:'Disjuntor — disparo instantâneo',    color:'#1fae66', type:'curve', get:breakerInstCurve, dash:false},
+  {id:'fusemin',label:'Elo fusível K — mínima fusão',       color:'#3ddcff', type:'curve', get:fuseMinMeltCurve, dash:false},
+  {id:'fusemax',label:'Elo fusível K — máxima abertura',    color:'#1d9fc4', type:'curve', get:fuseMaxClearCurve, dash:true},
+  {id:'sc',     label:'Corrente de curto-circuito',         color:'#ff4d6a', type:'vline', get:shortCircuitCurrent, dash:false},
+  {id:'gf',     label:'Falta fase-terra alta impedância',   color:'#a48bff', type:'vline', get:groundFaultCurrent, dash:false},
+];
+const curveVisible = {}; CURVE_DEFS.forEach(c=>curveVisible[c.id]=true);
+
+/* =========================================================
+   5. RENDER DO GRÁFICO
+========================================================= */
+const chartSvg = document.getElementById('chart');
+
+function pathFromPoints(pts){
+  return pts.map((p,i)=>(i===0?'M':'L')+xPix(p[0]).toFixed(2)+','+yPix(p[1]).toFixed(2)).join(' ');
+}
+
+function drawGrid(g){
+  // decades X
+  for(let e=0; Math.pow(10,e)<=CHART.xmax; e++){
+    const val = Math.pow(10,e);
+    if(val<CHART.xmin) continue;
+    const x = xPix(val);
+    g.appendChild(el('line',{x1:x,y1:CHART.mt,x2:x,y2:CHART.mt+CHART.ph,class:'',stroke:'var(--grid-major)','stroke-width':1}));
+    const t = el('text',{x:x,y:CHART.mt+CHART.ph+16,class:'tick-label','text-anchor':'middle'});
+    t.textContent = val>=1000? (val/1000)+'k' : val;
+    g.appendChild(t);
+    for(let s=2;s<10;s++){
+      const sv = val*s;
+      if(sv>CHART.xmax) break;
+      const sx = xPix(sv);
+      g.appendChild(el('line',{x1:sx,y1:CHART.mt,x2:sx,y2:CHART.mt+CHART.ph,stroke:'var(--grid-line)','stroke-width':.6}));
+    }
+  }
+  // decades Y
+  for(let e=-2; Math.pow(10,e)<=CHART.ymax; e++){
+    const val = Math.pow(10,e);
+    if(val<CHART.ymin) continue;
+    const y = yPix(val);
+    g.appendChild(el('line',{x1:CHART.ml,y1:y,x2:CHART.ml+CHART.pw,y2:y,stroke:'var(--grid-major)','stroke-width':1}));
+    const t = el('text',{x:CHART.ml-10,y:y+3,class:'tick-label','text-anchor':'end'});
+    t.textContent = val>=1? val : val;
+    g.appendChild(t);
+    for(let s=2;s<10;s++){
+      const sv = val*s;
+      if(sv>CHART.ymax) break;
+      const sy = yPix(sv);
+      g.appendChild(el('line',{x1:CHART.ml,y1:sy,x2:CHART.ml+CHART.pw,y2:sy,stroke:'var(--grid-line)','stroke-width':.6}));
+    }
+  }
+  // border
+  g.appendChild(el('rect',{x:CHART.ml,y:CHART.mt,width:CHART.pw,height:CHART.ph,fill:'none',stroke:'var(--border)','stroke-width':1}));
+  // axis labels
+  const xl = el('text',{x:CHART.ml+CHART.pw/2,y:CHART.h-6,class:'axis-label','text-anchor':'middle'});
+  xl.textContent = 'CORRENTE (A) — referida ao secundário 440 V — escala logarítmica';
+  g.appendChild(xl);
+  const yl = el('text',{x:16,y:CHART.mt+CHART.ph/2,class:'axis-label','text-anchor':'middle'});
+  yl.setAttribute('transform',`rotate(-90 16 ${CHART.mt+CHART.ph/2})`);
+  yl.textContent = 'TEMPO (s) — escala logarítmica';
+  g.appendChild(yl);
+}
+
+let faultMarkerLine=null, faultMarkerLabel=null, impactMarker=null;
+
+function renderChart(animate){
+  chartSvg.innerHTML='';
+  const gridG = el('g',{id:'grid'}); chartSvg.appendChild(gridG); drawGrid(gridG);
+  const curvesG = el('g',{id:'curves'}); chartSvg.appendChild(curvesG);
+
+  CURVE_DEFS.forEach((def,idx)=>{
+    if(!curveVisible[def.id]) return;
+    const grp = el('g',{'data-curve':def.id, opacity: animate?0:1});
+    if(def.type==='curve'){
+      const pts = def.get();
+      const path = el('path',{d:pathFromPoints(pts), class:'curve-path', stroke:def.color, style:`color:${def.color}`});
+      if(def.dash) path.setAttribute('stroke-dasharray','7 5');
+      grp.appendChild(path);
+      const last = pts[pts.length-1];
+      const lbl = el('text',{x:Math.min(xPix(last[0])+6, CHART.ml+CHART.pw-4), y:yPix(last[1]), class:'tick-label', fill:def.color});
+      lbl.textContent = def.label;
+      grp.appendChild(lbl);
+    } else {
+      const val = def.get();
+      const x = xPix(val);
+      const line = el('line',{x1:x,y1:CHART.mt,x2:x,y2:CHART.mt+CHART.ph, class:'vline', stroke:def.color, style:`color:${def.color}`});
+      grp.appendChild(line);
+      const lbl = el('text',{x:x+5,y:CHART.mt+13, class:'tick-label', fill:def.color});
+      lbl.textContent = def.label+' ('+fmt(val,val<50?2:0)+' A)';
+      grp.appendChild(lbl);
+    }
+    curvesG.appendChild(grp);
+    if(animate){
+      grp.style.transition='opacity .55s ease, transform .55s ease';
+      grp.style.transform='translateY(6px)';
+      setTimeout(()=>{ grp.style.opacity=1; grp.style.transform='translateY(0)'; }, 220*idx);
+    }
+  });
+
+  // dynamic markers group (fault sweep, impact point)
+  const dynG = el('g',{id:'dyn'}); chartSvg.appendChild(dynG);
+  faultMarkerLine=null; faultMarkerLabel=null; impactMarker=null;
+
+  buildLegend();
+}
+
+function buildLegend(){
+  const legend = document.getElementById('legend');
+  legend.innerHTML='';
+  CURVE_DEFS.forEach(def=>{
+    const item = document.createElement('div');
+    item.className='legend-item'+(curveVisible[def.id]?'':' off');
+    item.innerHTML = `<span class="legend-swatch${def.dash?' dash':''}" style="color:${def.color};background:${def.dash?'':def.color}"></span>${def.label}`;
+    item.onclick=()=>{ curveVisible[def.id]=!curveVisible[def.id]; renderChart(false); };
+    legend.appendChild(item);
+  });
+}
+
+/* moving marker used during demo scenes: draws a vertical sweeping line at given current */
+function showSweepMarker(current, color, label){
+  const dynG = document.getElementById('dyn') || chartSvg.querySelector('#dyn');
+  if(faultMarkerLine) faultMarkerLine.remove();
+  if(faultMarkerLabel) faultMarkerLabel.remove();
+  const x = xPix(current);
+  faultMarkerLine = el('line',{x1:x,y1:CHART.mt,x2:x,y2:CHART.mt+CHART.ph,stroke:color,'stroke-width':2.4,opacity:0.9});
+  faultMarkerLine.style.filter=`drop-shadow(0 0 6px ${color})`;
+  dynG.appendChild(faultMarkerLine);
+  faultMarkerLabel = el('text',{x:x+6,y:CHART.mt+30,class:'tick-label',fill:color,'font-weight':700});
+  faultMarkerLabel.textContent = label;
+  dynG.appendChild(faultMarkerLabel);
+}
+function clearSweepMarker(){
+  if(faultMarkerLine){faultMarkerLine.remove();faultMarkerLine=null;}
+  if(faultMarkerLabel){faultMarkerLabel.remove();faultMarkerLabel=null;}
+}
+function showImpact(current, time, color){
+  const dynG = chartSvg.querySelector('#dyn');
+  if(impactMarker) impactMarker.remove();
+  const g = el('g',{});
+  const cx=xPix(current), cy=yPix(time);
+  const c1 = el('circle',{cx,cy,r:5,fill:'none',stroke:color,'stroke-width':2});
+  const c2 = el('circle',{cx,cy,r:5,fill:'none',stroke:color,'stroke-width':2,opacity:.7});
+  c2.style.animation='pingRing 1.1s ease-out infinite';
+  const t = el('text',{x:cx+9,y:cy-9,class:'tick-label',fill:color,'font-weight':700}); t.textContent='PONTO DE ATUAÇÃO';
+  g.appendChild(c1); g.appendChild(c2); g.appendChild(t);
+  dynG.appendChild(g);
+  impactMarker=g;
+  if(!document.getElementById('pingKey')){
+    const st=document.createElement('style'); st.id='pingKey';
+    st.textContent='@keyframes pingRing{0%{r:5;opacity:.8;}100%{r:20;opacity:0;}}';
+    document.head.appendChild(st);
+  }
+}
+function clearImpact(){ if(impactMarker){impactMarker.remove();impactMarker=null;} }
+
+/* =========================================================
+   6. DIAGRAMA UNIFILAR
+========================================================= */
+const diagSvg = document.getElementById('diagram');
+function renderDiagram(){
+  diagSvg.innerHTML='';
+  const cx = 130;
+  const nodes = [
+    {y:20, label:'REDE 13,8 kV'},
+    {y:70, label:'ELO FUSÍVEL K', box:true, id:'d-fuse'},
+    {y:120, label:'TRANSFORMADOR 300 kVA · 13,8 kV / 440 V', box:true, wide:true, id:'d-xfmr'},
+    {y:175, label:'DISJUNTOR CAIXA MOLDADA', box:true, id:'d-brk'},
+    {y:225, label:'CARGA'},
+  ];
+  // vertical bus
+  diagSvg.appendChild(el('line',{x1:cx,y1:20,x2:cx,y2:225,class:'bus-line',id:'d-bus'}));
+  nodes.forEach(n=>{
+    if(n.box){
+      const w = n.wide?230:150, h=30;
+      diagSvg.appendChild(el('rect',{x:cx-w/2,y:n.y-h/2,width:w,height:h,rx:6,class:'device-box closed',id:n.id}));
+    }
+    const t = el('text',{x:cx+ (n.box? (n.wide?125:85):16),y:n.y+4,class:'diagram-label'+(n.box?' strong':'')});
+    t.textContent = n.label;
+    if(!n.box){ t.setAttribute('x', cx+16); }
+    diagSvg.appendChild(t);
+  });
+  // ground fault branch (hidden by default)
+  const gfLine = el('line',{x1:cx,y1:150,x2:cx+330,y2:150,stroke:'var(--violet)','stroke-width':2,'stroke-dasharray':'5 4',opacity:0,id:'d-gf-line'});
+  diagSvg.appendChild(gfLine);
+  const gfLabel = el('text',{x:cx+336,y:154,class:'diagram-label',fill:'var(--violet)',opacity:0,id:'d-gf-label'});
+  gfLabel.textContent='FALTA FASE-TERRA (Rf)';
+  diagSvg.appendChild(gfLabel);
+
+  // particles container
+  for(let i=0;i<5;i++){
+    const p = el('circle',{r:3.4,class:'energy-particle',id:'d-p'+i, cx:cx, cy:20});
+    diagSvg.appendChild(p);
+  }
+  animateParticles();
+}
+let particleRAF=null, particleT=0;
+function animateParticles(){
+  cancelAnimationFrame(particleRAF);
+  function frame(){
+    particleT += 0.006;
+    const on = diagState.energized && !diagState.tripped;
+    for(let i=0;i<5;i++){
+      const p = document.getElementById('d-p'+i);
+      if(!p) continue;
+      if(!on){ p.setAttribute('opacity',0); continue; }
+      p.setAttribute('opacity',0.9);
+      let phase = (particleT + i*0.2) % 1;
+      const y = 20 + phase*205;
+      p.setAttribute('cy', y);
+    }
+    particleRAF = requestAnimationFrame(frame);
+  }
+  frame();
+}
+const diagState = {energized:true, tripped:false, fuseOpen:false};
+function setDiagramState({energized, tripped, fuseOpen, groundFault}){
+  if(energized!==undefined) diagState.energized=energized;
+  if(tripped!==undefined) diagState.tripped=tripped;
+  if(fuseOpen!==undefined) diagState.fuseOpen=fuseOpen;
+  const brk = document.getElementById('d-brk');
+  const fuse = document.getElementById('d-fuse');
+  if(brk){ brk.setAttribute('class','device-box '+(diagState.tripped?'open':'closed')); }
+  if(fuse){ fuse.setAttribute('class','device-box '+(diagState.fuseOpen?'open':'closed')); }
+  const bus = document.getElementById('d-bus');
+  if(bus) bus.setAttribute('class','bus-line'+((diagState.energized&&!diagState.tripped)?' energized':''));
+  const gfLine = document.getElementById('d-gf-line');
+  const gfLabel = document.getElementById('d-gf-label');
+  if(gfLine && gfLabel){
+    gfLine.setAttribute('opacity', groundFault? 1:0);
+    gfLabel.setAttribute('opacity', groundFault? 1:0);
+  }
+}
+
+/* =========================================================
+   7. CARDS DE DADOS
+========================================================= */
+function renderCards(){
+  const cards = [
+    {k:'Corrente nominal primário', v:fmt(SYS.Ip,2), u:'A', s:'I = S / (√3 × 13,8 kV)'},
+    {k:'Corrente nominal secundário', v:fmt(SYS.Is,1), u:'A', s:'I = S / (√3 × 440 V)'},
+    {k:'Elo fusível tipo K', v:fmt(state.fuseRating,0), u:'A', s:'Ajustável no painel de controles', id:'card-fuse'},
+    {k:'Ajuste disjuntor (térmico)', v:fmt(SYS.Is*state.thermalMult,1), u:'A', s:'Caixa moldada — secundário', id:'card-brk'},
+    {k:'Corrente de curto-circuito', v:fmt(shortCircuitCurrent(),0), u:'A', s:'Estimada no barramento secundário', id:'card-sc'},
+  ];
+  const row = document.getElementById('cards-row');
+  row.innerHTML='';
+  cards.forEach(c=>{
+    const d = document.createElement('div'); d.className='card'; if(c.id) d.id=c.id;
+    d.innerHTML = `<div class="k">${c.k}</div><div class="v">${c.v}<span class="u">${c.u}</span></div><div class="s">${c.s}</div>`;
+    row.appendChild(d);
+  });
+}
+
+/* =========================================================
+   8. PAINEL DE STATUS / VALORES / EXPLICAÇÃO
+========================================================= */
+function setBigStatus(text, level){
+  const b = document.getElementById('big-status');
+  b.textContent = text;
+  b.className = 'big-status'+(level==='warn'?' warn':level==='fault'?' fault':'');
+  const hp = document.getElementById('header-status');
+  const hpt = document.getElementById('header-status-text');
+  hp.setAttribute('data-state', level==='fault'?'fault':level==='warn'?'warn':'ok');
+  hpt.textContent = text;
+}
+function setValues({corrente, tempo, dispositivo}){
+  if(corrente!==undefined) document.getElementById('v-corrente').textContent = corrente;
+  if(tempo!==undefined) document.getElementById('v-tempo').textContent = tempo;
+  if(dispositivo!==undefined) document.getElementById('v-dispositivo').textContent = dispositivo;
+}
+function setExplain(title, body){
+  document.getElementById('explain-title').textContent = title;
+  document.getElementById('explain-body').textContent = body;
+}
+
+/* =========================================================
+   9. SLIDERS
+========================================================= */
+function refreshRf(){
+  const rf = state.rf;
+  const If = groundFaultCurrent();
+  document.getElementById('lbl-rf').textContent = rf+' Ω';
+  document.getElementById('v-rf').textContent = fmt(rf,1)+' Ω';
+  document.getElementById('v-if').textContent = fmt(If,2)+' A';
+  renderChart(false);
+}
+document.getElementById('sl-rf').addEventListener('input', e=>{ state.rf = parseFloat(e.target.value); refreshRf(); });
+
+document.getElementById('sl-fuse').addEventListener('input', e=>{
+  state.fuseRating = parseFloat(e.target.value);
+  document.getElementById('lbl-fuse').textContent = state.fuseRating+' A';
+  renderCards(); renderChart(false);
+});
+document.getElementById('sl-thermal').addEventListener('input', e=>{
+  state.thermalMult = parseFloat(e.target.value)/100;
+  document.getElementById('lbl-thermal').textContent = fmt(state.thermalMult,2)+' × In';
+  renderCards(); renderChart(false);
+});
+document.getElementById('sl-inst').addEventListener('input', e=>{
+  state.instMult = parseFloat(e.target.value);
+  document.getElementById('lbl-inst').textContent = fmt(state.instMult,1)+' × Iset';
+  renderChart(false);
+});
+document.getElementById('sl-z').addEventListener('input', e=>{
+  state.pctZ = parseFloat(e.target.value)/10;
+  document.getElementById('lbl-z').textContent = fmt(state.pctZ,1)+' %';
+  renderCards(); renderChart(false);
+});
+
+/* =========================================================
+   10. BOOT SEQUENCE
+========================================================= */
+const bootLines = [
+  'Iniciando estudo de coordenação...',
+  'Carregando dados do transformador...',
+  'Analisando curvas de proteção...',
+  'Verificando seletividade...',
+  'Estudo pronto',
+];
+function runBoot(cb){
+  const wrap = document.getElementById('boot-lines');
+  const fill = document.getElementById('boot-fill');
+  wrap.innerHTML='';
+  let i=0;
+  function step(){
+    if(i>0){
+      const prev = wrap.children[i-1];
+      if(prev) prev.classList.add('done');
+    }
+    if(i>=bootLines.length){
+      fill.style.width='100%';
+      setTimeout(()=>{ document.getElementById('boot').classList.add('hidden'); cb(); }, 500);
+      return;
+    }
+    const line = document.createElement('div');
+    line.className='boot-line active';
+    line.style.animationDelay='0s';
+    line.textContent = bootLines[i];
+    wrap.appendChild(line);
+    fill.style.width = Math.round(((i+1)/bootLines.length)*100)+'%';
+    i++;
+    setTimeout(step, 620);
+  }
+  step();
+}
+document.getElementById('boot-skip').onclick = ()=>{ document.getElementById('boot').classList.add('hidden'); };
+
+/* =========================================================
+   10b. FORMA DE ONDA — INTERRUPÇÃO NO ZERO DE CORRENTE
+========================================================= */
+const WAVE = {W:460, H:120, mid:60, amp:24, targetAmp:24, phase:0, speed:0.045, cycles:3, tripped:false, cutPhase:null};
+function waveK(){ return (2*Math.PI*WAVE.cycles)/WAVE.W; }
+function waveAngleAt(x, phaseNow){ return phaseNow - (WAVE.W-x)*waveK(); }
+/* mult = corrente / corrente nominal do secundário (In). A amplitude visual usa escala logarítmica
+   porque a faixa real vai de ~0,02xIn (falta de alta impedância) a ~20xIn (curto-circuito) —
+   em escala linear a maioria das cenas ficaria achatada ou fora do desenho. */
+function setWaveLevel(mult){
+  mult = Math.max(0.02, mult);
+  WAVE.mult = mult;
+  let a = 24 + 11*Math.log2(mult<1 ? Math.max(0.15,mult) : mult);
+  WAVE.targetAmp = Math.max(6, Math.min(56, a));
+}
+
+function renderWave(){
+  const svg = document.getElementById('wave-svg');
+  if(!svg) return;
+  svg.innerHTML='';
+  svg.appendChild(el('line',{x1:0,y1:WAVE.mid,x2:WAVE.W,y2:WAVE.mid,stroke:'var(--border)','stroke-width':1}));
+  let d='', cutX=null;
+  for(let x=0;x<=WAVE.W;x+=2){
+    const ang = waveAngleAt(x, WAVE.phase);
+    let y;
+    const interrupted = WAVE.tripped && WAVE.cutPhase!==null && ang>=WAVE.cutPhase;
+    y = interrupted ? WAVE.mid : WAVE.mid - WAVE.amp*Math.sin(ang);
+    d += (x===0?'M':'L')+x+','+y.toFixed(1)+' ';
+    if(interrupted && cutX===null){ cutX = x - (ang-WAVE.cutPhase)/waveK(); }
+  }
+  const color = WAVE.tripped ? '#ff4d6a' : '#3ddcff';
+  svg.appendChild(el('path',{d, fill:'none', stroke:color, 'stroke-width':2, style:`filter:drop-shadow(0 0 4px ${color})`}));
+  if(WAVE.tripped && cutX!==null && cutX>=0 && cutX<=WAVE.W){
+    svg.appendChild(el('line',{x1:cutX,y1:6,x2:cutX,y2:WAVE.H-6,stroke:'#ff4d6a','stroke-width':1.3,'stroke-dasharray':'3 3'}));
+    const lbl = el('text',{x:Math.min(Math.max(4,cutX+6),WAVE.W-118),y:15,class:'tick-label',fill:'#ff4d6a','font-weight':700});
+    lbl.textContent='ABERTURA NO ZERO DE CORRENTE';
+    svg.appendChild(lbl);
+    const dot = el('circle',{cx:cutX,cy:WAVE.mid,r:3.4,fill:'#ff4d6a'});
+    dot.style.filter='drop-shadow(0 0 5px #ff4d6a)';
+    svg.appendChild(dot);
+  }
+  const nowInterrupted = WAVE.tripped && WAVE.cutPhase!==null && WAVE.phase>=WAVE.cutPhase;
+  const nowY = nowInterrupted ? WAVE.mid : WAVE.mid - WAVE.amp*Math.sin(WAVE.phase);
+  svg.appendChild(el('circle',{cx:WAVE.W-2, cy:nowY, r:3.4, fill:color}));
+  const lvl = el('text',{x:WAVE.W-4,y:WAVE.H-8,class:'tick-label','text-anchor':'end',fill:'var(--text-faint)'});
+  lvl.textContent = 'I ≈ '+fmt(WAVE.mult||1,2)+' × In';
+  svg.appendChild(lvl);
+}
+function waveLoop(){
+  WAVE.phase += WAVE.speed;
+  WAVE.amp += (WAVE.targetAmp - WAVE.amp)*0.05;
+  renderWave();
+  requestAnimationFrame(waveLoop);
+}
+function tripBreakerAtZero(){
+  if(WAVE.tripped) return;
+  WAVE.cutPhase = Math.ceil((WAVE.phase+0.18)/Math.PI)*Math.PI; // próximo cruzamento por zero, com folga p/ ficar visível
+  WAVE.tripped = true;
+}
+function resetWave(){ WAVE.tripped=false; WAVE.cutPhase=null; }
+
+/* =========================================================
+   11. DEMO MODE (cenas)
+========================================================= */
+let demoRunning=false, demoTimer=null, demoIndex=-1;
+
+const SCENES = [
+  {
+    label:'Cena 1 · Sistema normal',
+    run(){
+      clearSweepMarker(); clearImpact(); resetWave(); setWaveLevel(1);
+      setDiagramState({energized:true, tripped:false, fuseOpen:false, groundFault:false});
+      setBigStatus('NORMAL','ok');
+      setValues({corrente:fmt(SYS.Is,1)+' A', tempo:'—', dispositivo:'—'});
+      setExplain('CONDIÇÃO NORMAL DE OPERAÇÃO','O transformador está energizado e a carga opera na corrente nominal. Elo fusível e disjuntor estão fechados, sem qualquer condição de sobrecorrente. Este é o ponto de partida da coordenação.');
+    }
+  },
+  {
+    label:'Cena 2 · Energização (Inrush)',
+    run(){
+      setBigStatus('INRUSH','warn');
+      showSweepMarker(SYS.Is*9, '#ffd166', 'INRUSH ≈ 9× In');
+      setWaveLevel(9);
+      setValues({corrente:fmt(SYS.Is*9,0)+' A', tempo:'≈ 0,09 s (decaindo)', dispositivo:'Nenhum — condição transitória'});
+      setExplain('CORRENTE DE ENERGIZAÇÃO — INRUSH','Ao fechar o primário, a corrente de magnetização pode atingir valores muito elevados durante os primeiros ciclos, decaindo rapidamente. A proteção não deve atuar indevidamente durante a energização — por isso a curva do elo fusível deve permanecer à direita (mais lenta) do ponto de inrush.');
+    }
+  },
+  {
+    label:'Cena 3 · Sobrecarga',
+    run(){
+      setBigStatus('SOBRECARGA','warn');
+      const Iover = SYS.Is*state.thermalMult*2.2;
+      showSweepMarker(Iover, '#39e08a', 'SOBRECARGA ≈ 2,2× Iset');
+      setWaveLevel(Iover/SYS.Is);
+      setValues({corrente:fmt(Iover,0)+' A', tempo:'aguardando atuação térmica...', dispositivo:'Disjuntor (região térmica)'});
+      setExplain('CONDIÇÃO DE SOBRECARGA','Uma corrente acima da nominal, porém abaixo do curto-circuito, é aplicada. O disjuntor deve atuar após um tempo determinado pela sua curva térmica, protegendo o cabo e o transformador do aquecimento excessivo.');
+      setTimeout(()=>{
+        const t = 60/((2.2*2.2)-1);
+        showImpact(Iover, Math.max(0.02,t), '#39e08a');
+        setDiagramState({tripped:true});
+        tripBreakerAtZero();
+        setValues({tempo:fmt(Math.max(0.02,t),2)+' s', dispositivo:'DISJUNTOR — REGIÃO TÉRMICA'});
+        setBigStatus('DISJUNTOR ATUOU','fault');
+        setExplain('DISJUNTOR ATUOU PELA REGIÃO TÉRMICA','Decorrido o tempo definido pela curva térmica do disjuntor, o dispositivo abre o circuito, interrompendo a sobrecarga antes que o sistema sofra dano térmico.');
+      }, 1600);
+    }
+  },
+  {
+    label:'Cena 4 · Curto-circuito',
+    run(){
+      setDiagramState({tripped:false});
+      setBigStatus('CURTO-CIRCUITO','fault');
+      const Isc = shortCircuitCurrent();
+      showSweepMarker(Isc, '#ff4d6a', 'CURTO-CIRCUITO');
+      setWaveLevel(Isc/SYS.Is);
+      setValues({corrente:fmt(Isc,0)+' A', tempo:'analisando seletividade...', dispositivo:'—'});
+      setExplain('CURTO-CIRCUITO NO SECUNDÁRIO','Uma corrente elevada de curto-circuito é aplicada ao sistema. A corrente cruza as curvas de proteção — o dispositivo cuja curva for atingida primeiro (menor tempo) é quem atua. A coordenação depende da relação entre as curvas tempo × corrente dos dois dispositivos.');
+      setTimeout(()=>{
+        const Ir = fuseRefSecondary();
+        const mFuse = Isc/Ir;
+        const tFuse = mFuse>1.35? Math.max(0.008, Math.min(300, 15*Math.pow(2,2.75)/Math.pow(mFuse,2.75))) : 300;
+        const Iset = SYS.Is*state.thermalMult, Iinst=Iset*state.instMult;
+        const tBrk = Isc>=Iinst? 0.03 : Math.max(0.02,Math.min(400,60/(((Isc/Iset)*(Isc/Iset))-1)));
+        let winner, tWin;
+        if(tFuse < tBrk){ winner='ELO FUSÍVEL'; tWin=tFuse; }
+        else { winner='DISJUNTOR'; tWin=tBrk; }
+        showImpact(Isc, tWin, '#ff4d6a');
+        setDiagramState({tripped: winner==='DISJUNTOR', fuseOpen: winner==='ELO FUSÍVEL'});
+        if(winner==='DISJUNTOR') tripBreakerAtZero();
+        setValues({tempo:fmt(tWin,3)+' s', dispositivo:winner});
+        const gap = Math.abs(Math.log10(tFuse)-Math.log10(tBrk));
+        if(gap<0.12){
+          setBigStatus('SELETIVIDADE NÃO GARANTIDA','warn');
+          setExplain('SELETIVIDADE NÃO GARANTIDA','As curvas do elo fusível e do disjuntor estão muito próximas para esta corrente de curto-circuito, sem margem de tempo suficiente para garantir seletividade. Ambos os dispositivos podem atuar de forma não coordenada.');
+        } else {
+          setBigStatus(winner+' ATUOU PRIMEIRO','fault');
+          setExplain(winner+' ATUOU PRIMEIRO', winner==='ELO FUSÍVEL'
+            ? 'Para esta corrente de curto-circuito, a curva do elo fusível apresenta tempo de atuação menor que a do disjuntor — o elo interrompe a falta antes, mantendo a seletividade caso essa seja a lógica de coordenação pretendida.'
+            : 'Para esta corrente de curto-circuito, a curva do disjuntor apresenta tempo de atuação menor que a do elo fusível — o disjuntor interrompe a falta antes, preservando o elo fusível e a continuidade parcial do sistema.');
+        }
+      }, 1700);
+    }
+  },
+];
+
+function updatePresentLabel(){
+  document.getElementById('present-scene-label').textContent = `${demoIndex>=0?(demoIndex+1):0} / ${SCENES.length} — ${SCENES[demoIndex]?SCENES[demoIndex].label:''}`;
+}
+function updateDemoButton(){
+  const b = document.getElementById('btn-demo');
+  b.textContent = demoRunning ? '⏸ PAUSAR DEMONSTRAÇÃO' : (demoIndex<0 ? '▶ INICIAR DEMONSTRAÇÃO' : '▶ CONTINUAR DEMONSTRAÇÃO (loop)');
+  b.disabled=false;
+  document.getElementById('pb-play').textContent = demoRunning ? '⏸' : '▶';
+}
+function playScene(i){
+  if(i<0||i>=SCENES.length) return;
+  demoIndex=i;
+  SCENES[i].run();
+  updatePresentLabel();
+}
+/* avança para a cena i, dando a volta (loop) ao chegar no fim */
+function advanceTo(i){
+  const ni = ((i % SCENES.length)+SCENES.length) % SCENES.length;
+  playScene(ni);
+}
+function scheduleLoop(){
+  clearTimeout(demoTimer);
+  if(!demoRunning) return;
+  demoTimer = setTimeout(()=>{
+    advanceTo(demoIndex+1);
+    scheduleLoop();
+  }, 5200);
+}
+function startDemo(){
+  demoRunning=true;
+  updateDemoButton();
+  if(demoIndex<0) advanceTo(0);
+  scheduleLoop();
+}
+function stopDemo(){
+  demoRunning=false;
+  clearTimeout(demoTimer);
+  updateDemoButton();
+}
+document.getElementById('btn-demo').onclick = ()=> demoRunning ? stopDemo() : startDemo();
+
+/* =========================================================
+   12. FALTA FASE-TERRA (botão dedicado)
+========================================================= */
+function simulateGroundFault(){
+  clearTimeout(demoTimer); demoRunning=false; demoIndex=-1;
+  updateDemoButton();
+  const If = groundFaultCurrent();
+  setDiagramState({groundFault:true});
+  setBigStatus('FALTA DETECTADA','warn');
+  showSweepMarker(If, '#a48bff', 'FALTA FASE-TERRA ≈ '+fmt(If,2)+' A');
+  setWaveLevel(If/SYS.Is);
+  setValues({corrente:fmt(If,2)+' A', tempo:'avaliando sensibilização...', dispositivo:'—'});
+  setExplain('FALTA DETECTADA', 'Uma falta fase-terra com resistência de '+fmt(state.rf,1)+' Ω foi aplicada. Calculando a corrente resultante para verificar se os dispositivos de proteção convencionais conseguem detectá-la...');
+  setTimeout(()=>{
+    if(state.relayActive){
+      setBigStatus('RELÉ DE TERRA SENSIBILIZADO','warn');
+      setValues({tempo:'0,15 s (relé 51N)', dispositivo:'RELÉ DE TERRA (50N/51N)'});
+      setExplain('RELÉ DE TERRA SENSIBILIZADO','O relé de proteção de terra, ajustado para correntes muito inferiores às dos dispositivos de fase, detecta a corrente de falta e envia o comando de abertura.');
+      setTimeout(()=>{
+        setDiagramState({tripped:true});
+        tripBreakerAtZero();
+        setBigStatus('DISJUNTOR ABERTO','fault');
+        setValues({dispositivo:'COMANDO ENVIADO — DISJUNTOR ABERTO'});
+        setExplain('COMANDO DE ABERTURA ENVIADO','O relé envia o comando de trip ao disjuntor, que abre e isola a falta — mesmo sendo uma falta de alta impedância que a proteção convencional não conseguiria detectar.');
+      }, 1400);
+    } else {
+      setBigStatus('PROTEÇÃO NÃO ATUOU','fault');
+      setValues({tempo:'—', dispositivo:'NENHUM (corrente insuficiente)'});
+      setExplain('CORRENTE INSUFICIENTE PARA SENSIBILIZAR A PROTEÇÃO CONVENCIONAL','A resistência de falta limita a corrente a um valor muito abaixo do ajuste mínimo do elo fusível e do disparo magnético do disjuntor. Uma falta fase-terra com elevada impedância pode produzir uma corrente insuficiente para sensibilizar as proteções convencionais de sobrecorrente.');
+      showAlertBanner();
+    }
+  }, 1500);
+}
+function showAlertBanner(){
+  let b = document.getElementById('hz-alert');
+  if(!b){
+    b = document.createElement('div');
+    b.id='hz-alert';
+    b.style.cssText='margin-top:14px;padding:12px 16px;border:1px solid var(--red-dim);background:#2a0f18;border-radius:9px;color:#ffc3ce;font-size:12px;line-height:1.6;display:flex;gap:10px;align-items:flex-start;';
+    b.innerHTML = '<span style="font-size:16px">⚠</span><span><b>FALTA DE ALTA IMPEDÂNCIA</b><br>Uma falta fase-terra com elevada impedância pode produzir uma corrente insuficiente para sensibilizar as proteções convencionais de sobrecorrente.</span>';
+    document.getElementById('explain-panel').appendChild(b);
+  }
+}
+document.getElementById('btn-fault').onclick = simulateGroundFault;
+document.getElementById('btn-activate-relay').onclick = ()=>{
+  state.relayActive = true;
+  document.getElementById('btn-activate-relay').textContent='✓ Relé de terra ativo';
+  document.getElementById('btn-activate-relay').disabled=true;
+  simulateGroundFault();
+};
+document.getElementById('btn-compare-scroll').onclick = ()=> document.getElementById('compare-panel').scrollIntoView({behavior:'smooth', block:'start'});
+
+/* =========================================================
+   13. RESET / REPLAY
+========================================================= */
+document.getElementById('btn-reset').onclick = ()=>{
+  clearTimeout(demoTimer); demoRunning=false; demoIndex=-1;
+  updateDemoButton();
+  state.relayActive=false;
+  const relayBtn=document.getElementById('btn-activate-relay'); relayBtn.disabled=false; relayBtn.textContent='Ativar Relé de Terra';
+  const b=document.getElementById('hz-alert'); if(b) b.remove();
+  clearSweepMarker(); clearImpact(); resetWave(); setWaveLevel(1);
+  setDiagramState({energized:true, tripped:false, fuseOpen:false, groundFault:false});
+  setBigStatus('NORMAL','ok');
+  setValues({corrente:fmt(SYS.Is,1)+' A', tempo:'—', dispositivo:'—'});
+  setExplain('CONDIÇÃO NORMAL','O sistema foi reiniciado. A corrente nominal do secundário circula pela carga, dentro da faixa de operação normal do elo fusível e do disjuntor.');
+};
+document.getElementById('btn-replay-anim').onclick = ()=> renderChart(true);
+
+/* =========================================================
+   14. MODO APRESENTAÇÃO
+========================================================= */
+function togglePresentation(force){
+  const on = force!==undefined? force : !document.body.classList.contains('presentation');
+  document.body.classList.toggle('presentation', on);
+  if(on){ updatePresentLabel(); }
+}
+document.getElementById('btn-present-toggle').onclick = ()=>togglePresentation();
+document.getElementById('pb-exit').onclick = ()=>togglePresentation(false);
+document.getElementById('pb-play').onclick = ()=> demoRunning ? stopDemo() : startDemo();
+document.getElementById('pb-next').onclick = ()=>{ clearTimeout(demoTimer); advanceTo(demoIndex+1); if(demoRunning) scheduleLoop(); };
+document.getElementById('pb-prev').onclick = ()=>{ clearTimeout(demoTimer); advanceTo(demoIndex-1); if(demoRunning) scheduleLoop(); };
+document.getElementById('pb-restart').onclick = ()=>{ clearTimeout(demoTimer); advanceTo(0); if(demoRunning) scheduleLoop(); };
+
+/* =========================================================
+   15. INIT
+========================================================= */
+function init(){
+  renderCards();
+  renderDiagram();
+  renderChart(true);
+  refreshRf();
+  updatePresentLabel();
+  setWaveLevel(1);
+  waveLoop();
+}
+runBoot(init);
+
+})();
+</script>
+</body>
+</html>
